@@ -1,4 +1,5 @@
 aiohttp
+requests
 TgCrypto
 pyrogram
 pymongo
