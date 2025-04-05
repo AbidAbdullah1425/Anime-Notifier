@@ -5,6 +5,7 @@ pyrogram
 pymongo
 pyromod==1.5
 dnspython
+schedule
 
 
 
