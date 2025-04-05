@@ -1,8 +1,8 @@
 # plugins/runner.py
 import time
 import schedule
-from anilist import fetch_anime_schedule
-from notifier import send_notification, send_daily_schedule
+from plugins.anilist import fetch_anime_schedule
+from plugins.notifier import send_notification, send_daily_schedule
 from database import is_blocked
 
 def check_anime_updates():
