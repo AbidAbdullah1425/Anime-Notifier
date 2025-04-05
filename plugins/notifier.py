@@ -49,8 +49,11 @@ def send_startup_schedule(anime_list):
         for schedule in anime['airingSchedule']['nodes']:
             airing_time = datetime.fromtimestamp(schedule['airingAt'])
             time_left = airing_time - now
-            time_left_str = str(timedelta(seconds=time_left.seconds))
+            time_left_str = str(timedelta(seconds=time_left.total_seconds()))
             message += f"✨ {anime['title']['romaji']} | {anime['title']['english'] or anime['title']['romaji']} - Episode {schedule['episode']} airs in {time_left_str}\n"
+    
+    # Debug information
+    print(message)
     
     payload = {
         'chat_id': OWNER_ID,
