@@ -3,7 +3,7 @@ import time
 import schedule
 from plugins.anilist import fetch_anime_schedule
 from plugins.notifier import send_notification, send_daily_schedule
-from database import is_blocked
+from database.database import is_blocked
 
 def check_anime_updates():
     anime_list = fetch_anime_schedule()
