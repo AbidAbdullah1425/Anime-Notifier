@@ -17,3 +17,11 @@ def block_anime(anime_name):
         print(f"Anime '{anime_name}' has been blocked.")
     else:
         print(f"Anime '{anime_name}' is already blocked.")
+
+def unblock_anime(anime_name):
+    """Unblock the given anime by removing its name from the blocked collection."""
+    if is_blocked(anime_name):
+        blocked_collection.delete_one({'name': anime_name})
+        print(f"Anime '{anime_name}' has been unblocked.")
+    else:
+        print(f"Anime '{anime_name}' is not blocked.")
