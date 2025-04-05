@@ -25,7 +25,7 @@ def send_daily_anime_list():
     anime_list = fetch_anime_schedule()
     send_daily_schedule(anime_list)
 
-def send_startup_anime_list():
+async def send_startup_anime_list():
     anime_list = fetch_anime_schedule()
     send_startup_schedule(anime_list)
 
