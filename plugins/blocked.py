@@ -1,5 +1,5 @@
 # plugins/blocked.py
-from database import block_anime, unblock_anime
+from database.database import block_anime, unblock_anime
 
 def handle_blocked_command(anime_name):
     block_anime(anime_name)
