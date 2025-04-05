@@ -3,11 +3,11 @@ import requests
 
 ANILIST_API_URL = 'https://graphql.anilist.co'
 
-def fetch_recently_aired_anime():
+def fetch_anime_schedule():
     query = '''
     query {
       Page(page: 1, perPage: 50) {
-        media(type: ANIME, sort: END_DATE_DESC, status: FINISHED) {
+        media(type: ANIME, sort: START_DATE_DESC) {
           id
           title {
             romaji
@@ -20,6 +20,7 @@ def fetch_recently_aired_anime():
               airingAt
             }
           }
+          status
         }
       }
     }
