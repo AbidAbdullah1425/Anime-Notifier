@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import requests
-from bot Import Bot
+from bot import Bot
 import logging
 from config import OWNER_ID
 
