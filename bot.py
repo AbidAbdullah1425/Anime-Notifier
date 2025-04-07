@@ -8,7 +8,6 @@ from datetime import datetime
 import pyrogram.utils
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
 
-
 # Import the handlers from source.py
 from plugins.source import anime_new_handler, add_button_handler, button_input_handler, done_handler
 
@@ -51,7 +50,17 @@ class Bot(Client):
 
         self.username = usr_bot_me.username
 
-        
+        # Add the new command handlers
+        self.add_handler(anime_new_handler)
+        self.add_handler(add_button_handler)
+        self.add_handler(button_input_handler)
+        self.add_handler(done_handler)
+
+        # Add the original command handlers
+        self.add_handler(anime_handler)
+        self.add_handler(add_button_handler_old)
+        self.add_handler(button_input_handler_old)
+        self.add_handler(done_handler_old)
 
         # web-response
         app = web.AppRunner(await web_server())
@@ -62,15 +71,3 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
-
-# Add the new command handlers
-Bot.add_handler(anime_new_handler)
-Bot.add_handler(add_button_handler)
-Bot.add_handler(button_input_handler)
-Bot.add_handler(done_handler)
-
-# Add the original command handlers
-Bot.add_handler(anime_handler)
-Bot.add_handler(add_button_handler_old)
-Bot.add_handler(button_input_handler_old)
-Bot.add_handler(done_handler_old)
