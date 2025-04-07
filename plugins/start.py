@@ -3,9 +3,9 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from bot import Bot
-from config import START_MSG, ADMINS
+from config import START_MSG, OWNER_ID
 
-@Bot.on_message(filters.private & filters.user(ADMINS) & filters.command('start'))
+@Bot.on_message(filters.private & filters.user(OWNER_ID) & filters.command('start'))
 async def start_command(client: Client, message: Message):
     reply_markup = InlineKeyboardMarkup(
         [
