@@ -70,8 +70,11 @@ async def anime_new_handler(client, message: Message):
 
     await message.reply_photo(
         photo=anime_details["anime_cover_url"],
-        caption=f"✨ Anime Name: {anime_details['anime_title']} ✨\n\nClick 'Add Button' to add more buttons.",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Add Button", callback_data="add_button")]])
+        caption=f"✨ Anime Name: {anime_details['anime_title']} ✨\n\nClick 'Add Button' to add more buttons or 'Cancel' to cancel the process.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Add Button", callback_data="add_button")],
+            [InlineKeyboardButton("Cancel", callback_data="cancel_process")]
+        ])
     )
 
 @Bot.on_callback_query(filters.regex("add_button") & filters.user(OWNER_ID))
@@ -80,21 +83,32 @@ async def add_button_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.")
+    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.", quote=True)
 
-@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex("cancel_process") & filters.user(OWNER_ID))
+async def cancel_process_handler(client, callback_query):
+    user_id = callback_query.from_user.id
+    if user_id in user_data:
+        user_data.pop(user_id)
+    await callback_query.message.reply("Process has been canceled.", quote=True)
+
+@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID) & filters.reply)
 async def button_input_handler(client, message: Message):
     user_id = message.from_user.id
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
+    if message.reply_to_message is None:
+        await message.reply("Please reply to the bot's message.", quote=True)
+        return
+
     user_input = message.text.strip()
     if user_input.lower() == "done":
-        await message.reply("Please provide the channel ID where you want to post the content.")
+        await message.reply("Please provide the channel ID where you want to post the content.", quote=True)
         user_data[user_id]["waiting_for_channel"] = True
         return
 
-    if "waiting_for_channel" in user_data[user_id]:
+    if "waiting_for_channel" in user_data[user_id] and message.reply_to_message.text == "Please provide the channel ID where you want to post the content.":
         channel_id = user_input
         try:
             post_text = user_data[user_id]["post_text"]
@@ -108,12 +122,12 @@ async def button_input_handler(client, message: Message):
                 caption=post_text,
                 reply_markup=reply_markup
             )
-            await message.reply("Post successfully sent!")
+            await message.reply("Post successfully sent!", quote=True)
             user_data.pop(user_id)
 
         except Exception as e:
             logger.exception("An error occurred while posting to the channel.")
-            await message.reply("An error occurred while posting to the channel. Please ensure the bot has permission to post in the channel.")
+            await message.reply("An error occurred while posting to the channel. Please ensure the bot has permission to post in the channel.", quote=True)
         return
 
     try:
@@ -122,14 +136,14 @@ async def button_input_handler(client, message: Message):
         button_url = button_url.strip()
 
         if not (button_url.startswith("http://") or button_url.startswith("https://")):
-            await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).")
+            await message.reply("Invalid URL. Please provide a valid URL (starting with http:// or https://).", quote=True)
             return
 
         user_data[user_id]["buttons"].append([InlineKeyboardButton(button_text, url=button_url)])
-        await message.reply("Button added. Send 'done' if you have finished adding buttons or add another button in the format: `Button Text | URL`")
+        await message.reply("Button added. Send 'done' if you have finished adding buttons or add another button in the format: `Button Text | URL`", quote=True)
 
     except ValueError:
-        await message.reply("Invalid format. Please provide the button text and URL in the format: `Button Text | URL`")
+        await message.reply("Invalid format. Please provide the button text and URL in the format: `Button Text | URL`", quote=True)
 
 @Bot.on_callback_query(filters.regex("done") & filters.user(OWNER_ID))
 async def done_handler(client, callback_query):
@@ -137,5 +151,5 @@ async def done_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please provide the channel ID where you want to post the content.")
+    await callback_query.message.reply("Please provide the channel ID where you want to post the content.", quote=True)
     user_data[user_id]["waiting_for_channel"] = True
