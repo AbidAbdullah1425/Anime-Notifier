@@ -10,7 +10,7 @@ from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
 
 
 # Import the handlers from source.py
-from plugins.spurce import anime_new_handler, add_button_handler, button_input_handler, done_handler
+from plugins.source import anime_new_handler, add_button_handler, button_input_handler, done_handler
 
 # Import the original handlers from anilist.py
 from plugins.anilist import anime_handler, add_button_handler as add_button_handler_old, button_input_handler as button_input_handler_old, done_handler as done_handler_old
