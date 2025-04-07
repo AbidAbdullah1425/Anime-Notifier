@@ -58,6 +58,8 @@ def format_anime_post(anime_details):
     duration = anime_details['duration']
     episodes = anime_details['episodes']
     description = anime_details['description']
+    anime_id = anime_details["id"]
+    anime_cover_url = f"https://img.anili.st/media/{anime_id}"  # Use the AniList media cover URL
 
     post_text = (
         f"{title_romaji} | {title_native}\n\n"
@@ -73,7 +75,7 @@ def format_anime_post(anime_details):
         f"(Source: AniList)"
     )
     
-    return post_text
+    return post_text, anime_cover_url
 
 @Bot.on_message(filters.command("source") & filters.private & filters.user(OWNER_ID))
 async def anime_new_handler(client, message: Message):
@@ -86,11 +88,12 @@ async def anime_new_handler(client, message: Message):
     anime_name = " ".join(message.command[1:])
     try:
         anime_details = fetch_anime_details(anime_name)
-        post_text = format_anime_post(anime_details)
+        post_text, anime_cover_url = format_anime_post(anime_details)
         
         user_data[user_id] = {
             "anime_details": anime_details,
             "post_text": post_text,
+            "anime_cover_url": anime_cover_url,
             "buttons": [],
             "in_progress": True
         }
@@ -143,11 +146,13 @@ async def button_input_handler(client, message: Message):
         try:
             post_text = user_data[user_id]["post_text"]
             buttons = user_data[user_id]["buttons"]
+            cover_image = user_data[user_id]["anime_cover_url"]
             reply_markup = InlineKeyboardMarkup(buttons)
 
-            await client.send_message(
+            await client.send_photo(
                 chat_id=channel_id,
-                text=post_text,
+                photo=cover_image,
+                caption=post_text,
                 reply_markup=reply_markup
             )
             await message.reply("Post successfully sent!", quote=True)
