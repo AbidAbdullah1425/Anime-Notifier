@@ -8,11 +8,7 @@ from datetime import datetime
 import pyrogram.utils
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
 
-# Import the handlers from source.py
-from plugins.source import anime_new_handler, add_button_handler, button_input_handler, done_handler
 
-# Import the original handlers from anilist.py
-from plugins.anilist import anime_handler, add_button_handler as add_button_handler_old, button_input_handler as button_input_handler_old, done_handler as done_handler_old
 
 class Bot(Client):
     def __init__(self):
@@ -49,18 +45,6 @@ class Bot(Client):
             sys.exit()
 
         self.username = usr_bot_me.username
-
-        # Add the new command handlers
-        self.add_handler(anime_new_handler)
-        self.add_handler(add_button_handler)
-        self.add_handler(button_input_handler)
-        self.add_handler(done_handler)
-
-        # Add the original command handlers
-        self.add_handler(anime_handler)
-        self.add_handler(add_button_handler_old)
-        self.add_handler(button_input_handler_old)
-        self.add_handler(done_handler_old)
 
         # web-response
         app = web.AppRunner(await web_server())
