@@ -36,10 +36,11 @@ def fetch_anime_details(anime_name):
 
     anime_data = data["data"]["Media"]
     titles = anime_data["title"]
+    anime_id = anime_data["id"]
 
     # Prefer English title if available; fallback to romaji or native
     anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
-    anime_cover_url = anime_data["coverImage"]["extraLarge"]  # Use the extraLarge cover image URL
+    anime_cover_url = f"https://img.anili.st/media/{anime_id}"  # Use the AniList media cover URL
 
     return {
         "anime_title": anime_title,
