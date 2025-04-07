@@ -80,7 +80,7 @@ async def anime_new_handler(client, message: Message):
     user_id = message.from_user.id
 
     if len(message.command) < 2:
-        await message.reply("Anime name is missing. Usage: /anime_new [anime name]")
+        await message.reply("Anime name is missing. Usage: /source [anime name]")
         return
 
     anime_name = " ".join(message.command[1:])
@@ -101,7 +101,7 @@ async def anime_new_handler(client, message: Message):
         )
 
     except Exception as e:
-        logger.exception("An error occurred while processing the /anime_new command.")
+        logger.exception("An error occurred while processing the /source command.")
         await message.reply("An error occurred while fetching the anime details. Please try again.")
 
 @Bot.on_callback_query(filters.regex("add_button") & filters.user(OWNER_ID))
@@ -110,7 +110,7 @@ async def add_button_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished adding buttons.")
+    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.")
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def button_input_handler(client, message: Message):
