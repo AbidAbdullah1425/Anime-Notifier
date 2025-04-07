@@ -8,7 +8,7 @@ from datetime import datetime
 import pyrogram.utils
 pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 
-from config import API_HASH, API_ID, LOGGER, TG_BOT_TOKEN, TG_WORKERS, PORT
+from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_WORKERS, PORT
 
 class Bot(Client):
     def __init__(self):
