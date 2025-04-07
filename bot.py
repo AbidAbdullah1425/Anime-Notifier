@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 import pyrogram.utils
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
-from plugins.runner import send_startup_anime_list
+
 
 # Import the handlers from anilist_new.py
 from plugins.anilist_new import anime_new_handler, add_button_handler, button_input_handler, done_handler
@@ -51,8 +51,7 @@ class Bot(Client):
 
         self.username = usr_bot_me.username
 
-        # Send the startup anime list
-        await send_startup_anime_list()
+        
 
         # web-response
         app = web.AppRunner(await web_server())
