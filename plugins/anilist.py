@@ -22,13 +22,25 @@ def fetch_anime_details(anime_name):
           native
         }
         coverImage {
-          large
+          extraLarge
         }
-        episodes
-        season
+        genres
+        format
+        averageScore
+        status
         startDate {
           year
+          month
+          day
         }
+        endDate {
+          year
+          month
+          day
+        }
+        duration
+        episodes
+        description
       }
     }
     """
@@ -39,31 +51,40 @@ def fetch_anime_details(anime_name):
     return response.json()['data']['Media']
 
 def format_anime_post(anime_details):
-    title_english = anime_details['title'].get('english', anime_details['title']['romaji'])
     title_romaji = anime_details['title']['romaji']
     title_native = anime_details['title']['native']
-    cover_image = anime_details['coverImage']['large']
+    genres = ", ".join(anime_details['genres'])
+    format = anime_details['format']
+    average_score = anime_details['averageScore']
+    status = anime_details['status']
+    start_date = f"{anime_details['startDate']['year']}-{anime_details['startDate']['month']:02}-{anime_details['startDate']['day']:02}"
+    end_date = f"{anime_details['endDate']['year']}-{anime_details['endDate']['month']:02}-{anime_details['endDate']['day']:02}" if anime_details['endDate']['year'] else "N/A"
+    duration = anime_details['duration']
     episodes = anime_details['episodes']
-    season = anime_details['season']
-    year = anime_details['startDate']['year']
-    
+    description = anime_details['description']
+    cover_image = anime_details['coverImage']['extraLarge']
+
     post_text = (
-        f"✨ Anime Name: {title_english} | {title_native}✨\n"
-        "━━━━━━━━━━━━━━━\n"
-        "🗣 Language: Japanese\n"
-        "📺 Quality: 720p | 1080p\n"
-        f"🍂 Season: {season} {year}\n"
-        f"📆 Episode: 1 to {episodes}\n"
+        f"{title_romaji} | {title_native}\n\n"
+        f"‣ Genres : {genres}\n"
+        f"‣ Type : {format}\n"
+        f"‣ Average Rating : {average_score}\n"
+        f"‣ Status : {status}\n"
+        f"‣ First aired : {start_date}\n"
+        f"‣ Last aired : {end_date}\n"
+        f"‣ Runtime : {duration} minutes\n"
+        f"‣ No of episodes : {episodes}\n\n"
+        f"‣ Synopsis : {description}\n\n"
     )
     
     return post_text, cover_image
 
-@Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
-async def anime_handler(client, message: Message):
+@Bot.on_message(filters.command("source") & filters.private & filters.user(OWNER_ID))
+async def anime_new_handler(client, message: Message):
     user_id = message.from_user.id
 
     if len(message.command) < 2:
-        await message.reply("Anime name is missing. Usage: /anime [anime name]")
+        await message.reply("Anime name is missing. Usage: /source [anime name]")
         return
 
     anime_name = " ".join(message.command[1:])
@@ -86,7 +107,7 @@ async def anime_handler(client, message: Message):
         )
 
     except Exception as e:
-        logger.exception("An error occurred while processing the /anime command.")
+        logger.exception("An error occurred while processing the /source command.")
         await message.reply("An error occurred while fetching the anime details. Please try again.")
 
 @Bot.on_callback_query(filters.regex("add_button") & filters.user(OWNER_ID))
@@ -95,7 +116,7 @@ async def add_button_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line.")
+    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.")
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def button_input_handler(client, message: Message):
@@ -113,8 +134,8 @@ async def button_input_handler(client, message: Message):
         channel_id = user_input
         try:
             post_text = user_data[user_id]["post_text"]
-            cover_image = user_data[user_id]["cover_image"]
             buttons = user_data[user_id]["buttons"]
+            cover_image = user_data[user_id]["cover_image"]
             reply_markup = InlineKeyboardMarkup(buttons)
 
             await client.send_photo(
@@ -154,7 +175,3 @@ async def done_handler(client, callback_query):
 
     await callback_query.message.reply("Please provide the channel ID where you want to post the content.")
     user_data[user_id]["waiting_for_channel"] = True
-
-
-
-
