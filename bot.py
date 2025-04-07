@@ -6,20 +6,20 @@ from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
 import pyrogram.utils
-from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
+pyrogram.utils.MIN_CHANNEL_ID = -1009147483647
 
-
+from config import API_HASH, API_ID, LOGGER, TG_BOT_TOKEN, TG_WORKERS, PORT
 
 class Bot(Client):
     def __init__(self):
         super().__init__(
             name="Bot",
             api_hash=API_HASH,
-            api_id=APP_ID,
+            api_id=API_ID,
             plugins={
                 "root": "plugins"
             },
-            workers=TG_BOT_WORKERS,
+            workers=TG_WORKERS,
             bot_token=TG_BOT_TOKEN
         )
         self.LOGGER = LOGGER
@@ -32,21 +32,21 @@ class Bot(Client):
         try:
             self.set_parse_mode(ParseMode.HTML)
             self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/CodeXBotz")
-            self.LOGGER(__name__).info(f""" 
-░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗
-██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝
-██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░
-██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░
-╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░
-░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░
-            """)
+            self.LOGGER(__name__).info(f""" \n\n       
+░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗███████╗
+██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝╚════██║
+██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░░░███╔═╝
+██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░██╔══╝░░
+╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░███████╗
+░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝
+                                          """)
         except Exception as e:
             self.LOGGER(__name__).warning(f"Error during bot startup: {e}")
             sys.exit()
 
         self.username = usr_bot_me.username
 
-        # web-response
+        #web-response
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
