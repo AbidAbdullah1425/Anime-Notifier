@@ -155,7 +155,5 @@ async def done_handler(client, callback_query):
     user_data[user_id]["waiting_for_channel"] = True
 
 
-app.add_handler(anime_handler)
-app.add_handler(add_button_handler)
-app.add_handler(button_input_handler
-app.add_handler(done_handler)
+
+
