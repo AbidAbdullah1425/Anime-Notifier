@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import requests
+from bot Import Bot
 import logging
 from config import OWNER_ID
 
@@ -57,7 +58,7 @@ def format_anime_post(anime_details):
     
     return post_text, cover_image
 
-@Client.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
+@Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
 async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
@@ -88,7 +89,7 @@ async def anime_handler(client, message: Message):
         logger.exception("An error occurred while processing the /anime command.")
         await message.reply("An error occurred while fetching the anime details. Please try again.")
 
-@Client.on_callback_query(filters.regex("add_button") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex("add_button") & filters.user(OWNER_ID))
 async def add_button_handler(client, callback_query):
     user_id = callback_query.from_user.id
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
@@ -96,7 +97,7 @@ async def add_button_handler(client, callback_query):
 
     await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line.")
 
-@Client.on_message(filters.text & filters.private & filters.user(OWNER_ID))
+@Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
 async def button_input_handler(client, message: Message):
     user_id = message.from_user.id
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
@@ -145,7 +146,7 @@ async def button_input_handler(client, message: Message):
     except ValueError:
         await message.reply("Invalid format. Please provide the button text and URL in the format: `Button Text | URL`")
 
-@Client.on_callback_query(filters.regex("done") & filters.user(OWNER_ID))
+@Bot.on_callback_query(filters.regex("done") & filters.user(OWNER_ID))
 async def done_handler(client, callback_query):
     user_id = callback_query.from_user.id
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
