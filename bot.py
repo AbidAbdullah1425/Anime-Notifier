@@ -7,9 +7,10 @@ import sys
 from datetime import datetime
 import pyrogram.utils
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, PORT
+from plugins.runner import send_startup_anime_list
 
 # Import the handlers from anilist_new.py
-from plugins.source import anime_new_handler, add_button_handler, button_input_handler, done_handler
+from plugins.anilist_new import anime_new_handler, add_button_handler, button_input_handler, done_handler
 
 # Import the original handlers from anilist.py
 from plugins.anilist import anime_handler, add_button_handler as add_button_handler_old, button_input_handler as button_input_handler_old, done_handler as done_handler_old
@@ -36,16 +37,17 @@ class Bot(Client):
         try:
             self.set_parse_mode(ParseMode.HTML)
             self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/CodeXBotz")
-            self.LOGGER(__name__).info(f""" \n\n       
-░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗[...] 
-██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝[...] 
-██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░[...] 
-██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░[...] 
-╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░[...] 
-░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░[...] 
-            except Exception as e:
-                self.LOGGER(__name__).warning(f"Error during bot startup: {e}")
-                sys.exit()
+            self.LOGGER(__name__).info(f""" 
+░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗
+██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝
+██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░
+██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░
+╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░
+░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░
+            """)
+        except Exception as e:
+            self.LOGGER(__name__).warning(f"Error during bot startup: {e}")
+            sys.exit()
 
         self.username = usr_bot_me.username
 
