@@ -153,3 +153,9 @@ async def done_handler(client, callback_query):
 
     await callback_query.message.reply("Please provide the channel ID where you want to post the content.")
     user_data[user_id]["waiting_for_channel"] = True
+
+
+app.add_handler(anime_handler)
+app.add_handler(add_button_handler)
+app.add_handler(button_input_handler
+app.add_handler(done_handler)
