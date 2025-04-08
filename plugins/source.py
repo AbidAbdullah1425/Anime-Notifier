@@ -71,7 +71,7 @@ def format_anime_post(anime_details):
         f"‣ Last aired : {end_date}\n"
         f"‣ Runtime : {duration} minutes\n"
         f"‣ No of episodes : {episodes}\n\n"
-        f"‣ Synopsis : {description}\n\n"
+        f"‣ Synopsis : {description}"
     )
     
     return post_text, anime_cover_url
