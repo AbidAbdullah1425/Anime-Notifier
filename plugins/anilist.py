@@ -23,6 +23,9 @@ def fetch_anime_details(anime_name):
         coverImage {
           extraLarge
         }
+        season
+        episodes
+        description
       }
     }
     """
@@ -42,9 +45,17 @@ def fetch_anime_details(anime_name):
     anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
     anime_cover_url = f"https://img.anili.st/media/{anime_id}"  # Use the AniList media cover URL
 
+    # Fetch additional metadata
+    season = anime_data.get("season", "N/A").capitalize()
+    episodes = anime_data.get("episodes", "N/A")
+    description = anime_data.get("description", "No description available")
+
     return {
         "anime_title": anime_title,
-        "anime_cover_url": anime_cover_url
+        "anime_cover_url": anime_cover_url,
+        "season": season,
+        "episodes": episodes,
+        "description": description
     }
 
 @Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
@@ -63,18 +74,23 @@ async def anime_new_handler(client, message: Message):
         return
 
     # Save anime details to user_data
-    user_data[user_id] = {
-        "anime_title": anime_details["anime_title"],
-        "anime_cover_url": anime_details["anime_cover_url"],
-        "in_progress": True  # Set in-progress state
-    }
+    user_data[user_id] = anime_details
+    user_data[user_id]["buttons"] = []
+    user_data[user_id]["in_progress"] = True  # Set in-progress state
 
     await message.reply_photo(
         photo=anime_details["anime_cover_url"],
-        caption=f"✨ Anime Name: {anime_details['anime_title']} ✨\n\nClick 'Add Button' to add more buttons or 'Cancel' to cancel the process.",
+        caption=(
+            f"✨ Anime Name: {anime_details['anime_title']} | {anime_details['anime_title']} ✨\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"📺 Quality: 720p | 1080p\n"
+            f"🍂 Season: {anime_details['season']}\n"
+            f"📆 Episodes: 1 to {anime_details['episodes']}\n"
+            f"━━━━━━━━━━━━━━━"
+        ),
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("Add Button", callback_data="add_button")],
-            [InlineKeyboardButton("Cancel", callback_data="cancel_process")]
+            [InlineKeyboardButton("Skip Button", callback_data="skip_button")]
         ])
     )
 
@@ -84,7 +100,21 @@ async def add_button_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.", quote=True)
+    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`. Send 'done' when you are finished.", quote=True)
+
+@Bot.on_callback_query(filters.regex("skip_button") & filters.user(OWNER_ID))
+async def skip_button_handler(client, callback_query):
+    user_id = callback_query.from_user.id
+    if user_id not in user_data or not user_data[user_id].get("in_progress"):
+        return
+
+    await callback_query.message.reply(
+        "Please select the channel where you want to post the content:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Select Channel", switch_inline_query="select_channel")]
+        ])
+    )
+    user_data[user_id]["waiting_for_channel"] = True
 
 @Bot.on_callback_query(filters.regex("cancel_process") & filters.user(OWNER_ID))
 async def cancel_process_handler(client, callback_query):
@@ -105,16 +135,28 @@ async def button_input_handler(client, message: Message):
 
     user_input = message.text.strip()
     if user_input.lower() == "done":
-        await message.reply("Please provide the channel ID where you want to post the content.", quote=True)
+        await message.reply(
+            "Please select the channel where you want to post the content:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Select Channel", switch_inline_query="select_channel")]
+            ])
+        )
         user_data[user_id]["waiting_for_channel"] = True
         return
 
-    if "waiting_for_channel" in user_data[user_id] and message.reply_to_message.text == "Please provide the channel ID where you want to post the content.":
-        channel_id = user_input
+    if "waiting_for_channel" in user_data[user_id] and message.reply_to_message.text == "Please select the channel where you want to post the content:":
+        channel_id = message.forward_from_chat.id
         try:
-            post_text = user_data[user_id]["post_text"]
+            post_text = (
+                f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
+                f"━━━━━━━━━━━━━━━\n"
+                f"📺 Quality: 720p | 1080p\n"
+                f"🍂 Season: {user_data[user_id]['season']}\n"
+                f"📆 Episodes: 1 to {user_data[user_id]['episodes']}\n"
+                f"━━━━━━━━━━━━━━━"
+            )
             buttons = user_data[user_id]["buttons"]
-            cover_image = user_data[user_id]["cover_image"]
+            cover_image = user_data[user_id]["anime_cover_url"]
             reply_markup = InlineKeyboardMarkup(buttons)
 
             await client.send_photo(
@@ -152,5 +194,5 @@ async def done_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please provide the channel ID where you want to post the content.", quote=True)
+    await callback_query.message.reply("Please select the channel where you want to post the content:", quote=True)
     user_data[user_id]["waiting_for_channel"] = True
