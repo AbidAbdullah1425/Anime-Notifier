@@ -97,8 +97,9 @@ async def anime_new_handler(client, message: Message):
             "in_progress": True
         }
 
-        await message.reply(
-            text=post_text,
+        await message.reply_photo(
+            photo=anime_cover_url,
+            caption=post_text,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("Add Button", callback_data="add_button")],
                 [InlineKeyboardButton("Cancel", callback_data="cancel_process")]
