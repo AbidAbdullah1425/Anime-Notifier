@@ -37,6 +37,10 @@ def fetch_anime_details(anime_name):
         duration
         episodes
         description
+        coverImage {
+          extraLarge
+        }
+        season
       }
     }
     """
@@ -62,16 +66,12 @@ def format_anime_post(anime_details):
     anime_cover_url = f"https://img.anili.st/media/{anime_id}"  # Use the AniList media cover URL
 
     post_text = (
-        f"{title_romaji} | {title_native}\n\n"
-        f"‣ Genres : {genres}\n"
-        f"‣ Type : {format}\n"
-        f"‣ Average Rating : {average_score}\n"
-        f"‣ Status : {status}\n"
-        f"‣ First aired : {start_date}\n"
-        f"‣ Last aired : {end_date}\n"
-        f"‣ Runtime : {duration} minutes\n"
-        f"‣ No of episodes : {episodes}\n\n"
-        f"‣ Synopsis : {description}"
+        f"✨ Anime Name: {title_romaji} | {title_native} ✨\n"
+        f"━━━━━━━━━━━━━━━\n"
+        f"📺 Quality: 720p | 1080p\n"
+        f"🍂 Season: {anime_details['season']}\n"
+        f"📆 Episodes: 1 to {episodes}\n"
+        f"━━━━━━━━━━━━━━━"
     )
     
     return post_text, anime_cover_url
@@ -102,6 +102,7 @@ async def anime_new_handler(client, message: Message):
             caption=post_text,
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("Add Button", callback_data="add_button")],
+                [InlineKeyboardButton("Skip Button", callback_data="skip_button")],
                 [InlineKeyboardButton("Cancel", callback_data="cancel_process")]
             ])
         )
@@ -116,7 +117,26 @@ async def add_button_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please send the button text and URL in the format: `Button Text | URL`\nYou can add multiple buttons by sending each in a new line. Send 'done' when you are finished.", quote=True)
+    await callback_query.message.reply(
+        "Please send the button text and URL in the format: `Button Text | URL`. Send 'done' when you are finished.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Done", callback_data="done_adding_buttons")]
+        ])
+    )
+
+@Bot.on_callback_query(filters.regex("skip_button|done_adding_buttons") & filters.user(OWNER_ID))
+async def skip_button_handler(client, callback_query):
+    user_id = callback_query.from_user.id
+    if user_id not in user_data or not user_data[user_id].get("in_progress"):
+        return
+
+    await callback_query.message.reply(
+        "Please select the channel where you want to post the content:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Select Channel", switch_inline_query="")]
+        ])
+    )
+    user_data[user_id]["waiting_for_channel"] = True
 
 @Bot.on_callback_query(filters.regex("cancel_process") & filters.user(OWNER_ID))
 async def cancel_process_handler(client, callback_query):
@@ -137,12 +157,17 @@ async def button_input_handler(client, message: Message):
 
     user_input = message.text.strip()
     if user_input.lower() == "done":
-        await message.reply("Please provide the channel ID where you want to post the content.", quote=True)
+        await message.reply(
+            "Please select the channel where you want to post the content:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Select Channel", switch_inline_query="")]
+            ])
+        )
         user_data[user_id]["waiting_for_channel"] = True
         return
 
-    if "waiting_for_channel" in user_data[user_id] and message.reply_to_message.text == "Please provide the channel ID where you want to post the content.":
-        channel_id = user_input
+    if "waiting_for_channel" in user_data[user_id] and message.reply_to_message.text == "Please select the channel where you want to post the content:":
+        channel_id = message.forward_from_chat.id
         try:
             post_text = user_data[user_id]["post_text"]
             buttons = user_data[user_id]["buttons"]
@@ -184,5 +209,5 @@ async def done_handler(client, callback_query):
     if user_id not in user_data or not user_data[user_id].get("in_progress"):
         return
 
-    await callback_query.message.reply("Please provide the channel ID where you want to post the content.", quote=True)
+    await callback_query.message.reply("Please select the channel where you want to post the content:", quote=True)
     user_data[user_id]["waiting_for_channel"] = True
