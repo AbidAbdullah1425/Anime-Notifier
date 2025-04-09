@@ -99,26 +99,31 @@ def process_caption(title_romaji, title_native, genres_formatted, anime_format, 
         f"‣ Synopsis : "
     )
 
+    # Handle empty synopsis
+    if not synopsis or synopsis.strip() == "":
+        synopsis = "No synopsis available.\n\n(Source: AniList)"
+    
     # Clean synopsis and handle Source text
     synopsis = ' '.join(synopsis.split())
+    
+    # Extract existing source if present
     if "(Source:" in synopsis:
         main_text, source_text = synopsis.split("(Source:", 1)
-        synopsis = f"{main_text.strip()}\n\n(Source:{source_text.strip()}"
-    
-    # Calculate remaining space for synopsis
-    remaining_space = 1024 - len(base_caption)
+        source = f"\n\n(Source:{source_text.strip()}"
+        synopsis = main_text.strip()
+    else:
+        # If no source, add AniList as source
+        source = "\n\n(Source: AniList)"
+        
+    # Calculate remaining space (accounting for source length)
+    remaining_space = 1024 - len(base_caption) - len(source)
     
     # Truncate synopsis only if total length would exceed limit
     if len(synopsis) > remaining_space:
-        # If we need to truncate and it has a source
-        if "(Source:" in synopsis:
-            # Leave space for \n\n and ...
-            main_text = synopsis[:remaining_space-6] + "..."
-            synopsis = main_text
-        else:
-            synopsis = synopsis[:remaining_space-3] + "..."
+        synopsis = synopsis[:remaining_space-3] + "..."
 
-    return base_caption + synopsis
+    # Combine all parts with proper spacing
+    return base_caption + synopsis + source
 
 def fetch_anime_details(anime_name):
     query = """
