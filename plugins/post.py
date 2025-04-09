@@ -1,5 +1,6 @@
 import requests
 import logging
+from random import choice
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,46 +12,75 @@ logger = logging.getLogger(__name__)
 # Storage for post data
 post_data = {}
 
+# Updated genres with emojis
+GENRES_EMOJI = {
+    "Action": "👊",
+    "Adventure": lambda: choice(['🪂', '🧗‍♀']),
+    "Comedy": "🤣",
+    "Drama": "🎭",
+    "Ecchi": lambda: choice(['💋', '🥵']),
+    "Fantasy": lambda: choice(['🧞', '🧞‍♂', '🧞‍♀', '🌗']),
+    "Hentai": "🔞",
+    "Horror": "☠",
+    "Mahou Shoujo": "☯",
+    "Mecha": "🤖",
+    "Music": "🎸",
+    "Mystery": "🔮",
+    "Psychological": "♟",
+    "Romance": "💞",
+    "Sci-Fi": "🛸",
+    "Slice of Life": lambda: choice(['☘','🍁']),
+    "Sports": "⚽️",
+    "Supernatural": "🫧",
+    "Thriller": lambda: choice(['🥶', '🔪','🤯']),
+    "Seinen": "👨",
+    "Shoujo": "👧",
+    "Shounen": "👦",
+    "Josei": "👩",
+    "Military": "🎖️",
+    "School": "🏫",
+    "Magic": "🔮",
+    "Demons": "😈",
+    "Martial Arts": "🥋",
+    "Super Power": "💪",
+    "Game": "🎮",
+    "Parody": "🃏",
+    "Police": "👮",
+    "Space": "🌌",
+    "Vampire": "🧛",
+    "Samurai": "⚔️",
+    "Historical": "📜",
+    "Harem": "👥",
+    "Kids": "🧒",
+    "Cars": "🚗",
+    "Food": "🍜",
+    "Award Winning": "🏆",
+    "Gourmet": "🍽️",
+    "Work Life": "💼",
+    "Suspense": "😰",
+    "Racing": "🏎️",
+    "Reincarnation": "🔄",
+    "Time Travel": "⌛",
+    "Isekai": "🌀",
+    "Post-Apocalyptic": "🏚️",
+    "Cyberpunk": "🤳",
+    "Boys Love": "👨‍❤️‍👨",
+    "Girls Love": "👩‍❤️‍👩",
+    "Battle Royale": "🎯",
+    "Cooking": "👨‍🍳",
+    "Survival": "🏕️",
+    "Aliens": "👽",
+    "Crime": "🚔",
+    "Detective": "🕵️",
+    "Psychological Horror": "🎭",
+    "Medical": "⚕️",
+    "Educational": "📚"
+}
+
 def get_genre_emoji(genre):
-    """Get emoji for each genre"""
-    emoji_map = {
-        'Action': '⚔️',
-        'Adventure': '🪂',
-        'Comedy': '🤣',
-        'Drama': '🎭',
-        'Fantasy': '🌗',
-        'Horror': '👻',
-        'Mystery': '🔍',
-        'Romance': '💖',
-        'Sci-Fi': '🚀',
-        'Slice of Life': '🌟',
-        'Sports': '⚽',
-        'Supernatural': '✨',
-        'Thriller': '😱',
-        'Mecha': '🤖',
-        'Music': '🎵',
-        'Psychological': '🧠',
-        'Military': '🎖️',
-        'School': '🏫',
-        'Magic': '🔮',
-        'Ecchi': '💝',
-        'Demons': '😈',
-        'Harem': '👥',
-        'Historical': '📜',
-        'Martial Arts': '🥋',
-        'Super Power': '💪',
-        'Game': '🎮',
-        'Parody': '🃏',
-        'Police': '👮',
-        'Space': '🌌',
-        'Vampire': '🧛',
-        'Samurai': '⚔️',
-        'Seinen': '👨',
-        'Shoujo': '👧',
-        'Shounen': '👦',
-        'Josei': '👩'
-    }
-    return emoji_map.get(genre, '🎬')
+    """Get emoji for genre with support for random choice"""
+    emoji = GENRES_EMOJI.get(genre, '🎬')  # Default emoji if genre not found
+    return emoji() if callable(emoji) else emoji
 
 def fetch_anime_details(anime_name):
     query = """
