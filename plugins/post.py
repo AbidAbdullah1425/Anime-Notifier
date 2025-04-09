@@ -33,7 +33,48 @@ GENRES_EMOJI = {
     "Sports": "⚽️",
     "Supernatural": "🫧",
     "Thriller": lambda: choice(['🥶', '🔪','🤯']),
-    # [Rest of the genres remain the same...]
+    "Seinen": "👨",
+    "Shoujo": "👧",
+    "Shounen": "👦",
+    "Josei": "👩",
+    "Military": "🎖️",
+    "School": "🏫",
+    "Magic": "🔮",
+    "Demons": "😈",
+    "Martial Arts": "🥋",
+    "Super Power": "💪",
+    "Game": "🎮",
+    "Parody": "🃏",
+    "Police": "👮",
+    "Space": "🌌",
+    "Vampire": "🧛",
+    "Samurai": "⚔️",
+    "Historical": "📜",
+    "Harem": "👥",
+    "Kids": "🧒",
+    "Cars": "🚗",
+    "Food": "🍜",
+    "Award Winning": "🏆",
+    "Gourmet": "🍽️",
+    "Work Life": "💼",
+    "Suspense": "😰",
+    "Racing": "🏎️",
+    "Reincarnation": "🔄",
+    "Time Travel": "⌛",
+    "Isekai": "🌀",
+    "Post-Apocalyptic": "🏚️",
+    "Cyberpunk": "🤳",
+    "Boys Love": "👨‍❤️‍👨",
+    "Girls Love": "👩‍❤️‍👩",
+    "Battle Royale": "🎯",
+    "Cooking": "👨‍🍳",
+    "Survival": "🏕️",
+    "Aliens": "👽",
+    "Crime": "🚔",
+    "Detective": "🕵️",
+    "Psychological Horror": "🎭",
+    "Medical": "⚕️",
+    "Educational": "📚"
 }
 
 def get_genre_emoji(genre):
@@ -58,15 +99,24 @@ def process_caption(title_romaji, title_native, genres_formatted, anime_format, 
         f"‣ Synopsis : "
     )
 
-    # Remove extra spaces and line breaks from synopsis
+    # Clean synopsis and handle Source text
     synopsis = ' '.join(synopsis.split())
+    if "(Source:" in synopsis:
+        main_text, source_text = synopsis.split("(Source:", 1)
+        synopsis = f"{main_text.strip()}\n\n(Source:{source_text.strip()}"
     
     # Calculate remaining space for synopsis
     remaining_space = 1024 - len(base_caption)
     
     # Truncate synopsis only if total length would exceed limit
     if len(synopsis) > remaining_space:
-        synopsis = synopsis[:remaining_space-3] + "..."
+        # If we need to truncate and it has a source
+        if "(Source:" in synopsis:
+            # Leave space for \n\n and ...
+            main_text = synopsis[:remaining_space-6] + "..."
+            synopsis = main_text
+        else:
+            synopsis = synopsis[:remaining_space-3] + "..."
 
     return base_caption + synopsis
 
@@ -156,7 +206,6 @@ async def post_handler(client, message: Message):
     genres_formatted = ', '.join([f'{get_genre_emoji(genre)} #{genre}' for genre in anime_data['genres']])
 
     # Process caption
-    synopsis = ' '.join(anime_data['description'].split())  # Clean synopsis
     info_post = process_caption(
         anime_data['title']['romaji'],
         anime_data['title']['native'],
@@ -168,7 +217,7 @@ async def post_handler(client, message: Message):
         end_date,
         anime_data['duration'],
         anime_data['episodes'],
-        synopsis
+        anime_data['description']
     )
 
     anime_post = (
