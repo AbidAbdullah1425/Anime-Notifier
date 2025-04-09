@@ -173,56 +173,34 @@ async def process_buttons(client, message: Message):
 @Bot.on_callback_query(filters.regex("select_channel") & filters.user(OWNER_ID))
 async def channel_selector(client, callback_query):
     try:
-        # Get the list of channels where the bot is admin
-        dialogs = []
-        async for dialog in client.get_dialogs():
-            if dialog.chat.type == "channel":
-                # Check if bot has admin rights in the channel
-                try:
-                    member = await client.get_chat_member(dialog.chat.id, (await client.get_me()).id)
-                    if member.status in ["administrator", "creator"]:
-                        dialogs.append({
-                            "title": dialog.chat.title,
-                            "id": dialog.chat.id
-                        })
-                except Exception:
-                    continue
-
-        if not dialogs:
-            await callback_query.answer("No channels found where bot is admin!", show_alert=True)
-            return
-
-        # Create keyboard with channel list
-        keyboard = []
-        for dialog in dialogs:
-            keyboard.append([
-                InlineKeyboardButton(
-                    f"📢 {dialog['title']}", 
-                    callback_data=f"post_to_{dialog['id']}"
-                )
-            ])
+        # Create an inline keyboard with just one button to select channel
+        keyboard = [[
+            InlineKeyboardButton(
+                "📢 Select Channel", 
+                switch_inline_query_current_chat=""
+            )
+        ]]
 
         await callback_query.message.edit_text(
-            "Select a channel to post:",
+            "Click the button below to select a channel:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
     except Exception as e:
         await callback_query.answer(f"Error: {str(e)}", show_alert=True)
 
-@Bot.on_callback_query(filters.regex("^post_to_") & filters.user(OWNER_ID))
-async def post_to_channel(client, callback_query):
-    user_id = callback_query.from_user.id
-    if user_id not in user_data:
-        await callback_query.answer("Session expired. Please start over.", show_alert=True)
-        return
-
+@Bot.on_chosen_inline_result()
+async def handle_chosen_chat(client, chosen_inline_result):
     try:
-        channel_id = int(callback_query.data.replace("post_to_", ""))
+        user_id = chosen_inline_result.from_user.id
+        if user_id not in user_data:
+            return
+
+        chat_id = int(chosen_inline_result.result_id)
         
-        # Post to channel
+        # Post to selected channel
         await client.send_photo(
-            chat_id=channel_id,
+            chat_id=chat_id,
             photo=user_data[user_id]["anime_cover_url"],
             caption=(
                 f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
@@ -237,7 +215,13 @@ async def post_to_channel(client, callback_query):
 
         # Clean up
         user_data.pop(user_id)
-        await callback_query.message.edit_text("✅ Posted successfully!")
+        await client.send_message(
+            chat_id=chosen_inline_result.from_user.id,
+            text="✅ Posted successfully!"
+        )
 
     except Exception as e:
-        await callback_query.answer(f"Error posting: {str(e)}", show_alert=True)
+        await client.send_message(
+            chat_id=chosen_inline_result.from_user.id,
+            text=f"❌ Error posting: {str(e)}"
+        )
