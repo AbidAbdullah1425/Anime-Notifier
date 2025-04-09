@@ -296,7 +296,7 @@ async def post_to_channel(client, callback_query):
 
 
 
-"""
+'''
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import requests
@@ -529,4 +529,4 @@ async def channel_selection_handler(client, message: Message):
     except Exception as e:
         logger.exception("An error occurred while posting to the channel.")
         await message.reply("An error occurred while posting to the channel. Please ensure the bot has permission to post in the channel.", quote=True)
-"""
+'''
