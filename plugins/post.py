@@ -169,11 +169,17 @@ async def post_handler(client, message: Message):
     # Format genres with emojis
     genres_formatted = ', '.join([f'{get_genre_emoji(genre)} #{genre}' for genre in anime_data['genres']])
 
+    # Truncate synopsis if too long
+    synopsis = anime_data['description']
+    if len(synopsis) > 700:
+        synopsis = synopsis[:697] + "..."
+
     # Save data
     post_data[user_id] = {
         "anime_data": anime_data,
         "cover_url": cover_url,
         "genres_formatted": genres_formatted,
+        "synopsis": synopsis,
         "step": "waiting_channel"
     }
 
@@ -188,7 +194,7 @@ async def post_handler(client, message: Message):
         f"‣ Last aired : {end_date}\n"
         f"‣ Runtime : {anime_data['duration']} minutes\n"
         f"‣ No of episodes : {anime_data['episodes']}\n\n"
-        f"‣ Synopsis : {anime_data['description']}"
+        f"‣ Synopsis : {synopsis}"
     )
 
     anime_post = (
@@ -230,8 +236,23 @@ async def handle_channel_id(client, message: Message):
     anime_data = post_data[user_id]["anime_data"]
     cover_url = post_data[user_id]["cover_url"]
     genres_formatted = post_data[user_id]["genres_formatted"]
+    synopsis = post_data[user_id]["synopsis"]
 
     try:
+        # First verify channel access
+        try:
+            chat = await client.get_chat(channel_id)
+            if not chat:
+                raise ValueError("Cannot access channel")
+        except Exception:
+            await message.reply(
+                "❌ Invalid Channel ID. Please make sure:\n"
+                "1. Channel ID starts with -100\n"
+                "2. Bot is added to the channel\n"
+                "3. Bot is admin in the channel"
+            )
+            return
+
         # First post (Info with cover)
         start_date = datetime(
             anime_data["startDate"]["year"],
@@ -258,7 +279,7 @@ async def handle_channel_id(client, message: Message):
                 f"‣ Last aired : {end_date}\n"
                 f"‣ Runtime : {anime_data['duration']} minutes\n"
                 f"‣ No of episodes : {anime_data['episodes']}\n\n"
-                f"‣ Synopsis : {anime_data['description']})"
+                f"‣ Synopsis : {synopsis}"
             )
         )
 
@@ -279,7 +300,16 @@ async def handle_channel_id(client, message: Message):
         )
 
     except Exception as e:
-        await message.reply(f"❌ Error: {str(e)}\nMake sure bot is admin in channel.")
+        error_message = str(e)
+        if "PEER_ID_INVALID" in error_message:
+            await message.reply(
+                "❌ Invalid Channel ID. Please make sure:\n"
+                "1. Channel ID starts with -100\n"
+                "2. Bot is added to the channel\n"
+                "3. Bot is admin in the channel"
+            )
+        else:
+            await message.reply(f"❌ Error: {error_message}")
         post_data.pop(user_id, None)
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
