@@ -7,8 +7,14 @@ from config import OWNER_ID
 
 logger = logging.getLogger(__name__)
 
-# Temporary storage for user input
+# Temporary storage for user input with states
 user_data = {}
+
+# States for the anime command flow
+class State:
+    IDLE = 0
+    WAITING_FOR_BUTTONS = 1
+    WAITING_FOR_CHANNEL = 2
 
 def fetch_anime_details(anime_name):
     query = """query ($search: String) {
@@ -39,11 +45,9 @@ def fetch_anime_details(anime_name):
     titles = anime_data["title"]
     anime_id = anime_data["id"]
 
-    # Prefer English title if available; fallback to romaji or native
     anime_title = titles.get("english") or titles.get("romaji") or titles.get("native")
     anime_cover_url = f"https://img.anili.st/media/{anime_id}"
 
-    # Fetch additional metadata
     season = anime_data.get("season", "N/A").capitalize()
     episodes = anime_data.get("episodes", "N/A")
     description = anime_data.get("description", "No description available")
@@ -57,7 +61,7 @@ def fetch_anime_details(anime_name):
     }
 
 @Bot.on_message(filters.command("anime") & filters.private & filters.user(OWNER_ID))
-async def anime_new_handler(client, message: Message):
+async def anime_handler(client, message: Message):
     user_id = message.from_user.id
 
     if len(message.command) < 2:
@@ -71,11 +75,13 @@ async def anime_new_handler(client, message: Message):
         await message.reply("Anime not found. Please check the name and try again.")
         return
 
-    # Save anime details to user_data
-    user_data[user_id] = anime_details
-    user_data[user_id]["in_progress"] = True
+    # Initialize user state and data
+    user_data[user_id] = {
+        **anime_details,
+        "state": State.WAITING_FOR_BUTTONS
+    }
 
-    # First, ask for button details
+    # Ask for button details
     await message.reply(
         "Please send the button details in these formats:\n\n"
         "1. One button per line (vertical):\n"
@@ -87,53 +93,49 @@ async def anime_new_handler(client, message: Message):
     )
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
-async def process_buttons(client, message: Message):
+async def process_input(client, message: Message):
     user_id = message.from_user.id
-    if user_id not in user_data or not user_data[user_id].get("in_progress"):
+    
+    # Check if user has an active anime command session
+    if user_id not in user_data or user_data[user_id].get("state") != State.WAITING_FOR_BUTTONS:
         return
-
+    
     try:
         buttons = []
         
-        # Process button details line by line
+        # Process button details
         for line in message.text.strip().split('\n'):
             if not line.strip():
                 continue
             
-            # Check if line contains horizontal buttons (separated by |)
             if '|' in line:
                 horizontal_buttons = []
-                button_parts = line.split('|')
-                
-                for part in button_parts:
+                for part in line.split('|'):
                     if ' - ' not in part:
                         raise ValueError(f"Invalid button format in: {part}")
                     
                     button_text, button_url = [x.strip() for x in part.split(' - ', 1)]
-                    
                     if not (button_url.startswith("http://") or button_url.startswith("https://")):
                         raise ValueError(f"Invalid URL format: {button_url}")
                     
                     horizontal_buttons.append(InlineKeyboardButton(button_text, url=button_url))
                 
                 buttons.append(horizontal_buttons)
-            
-            # Single button per line
             else:
                 if ' - ' not in line:
                     raise ValueError(f"Invalid button format in line: {line}")
                 
                 button_text, button_url = [x.strip() for x in line.split(' - ', 1)]
-                
                 if not (button_url.startswith("http://") or button_url.startswith("https://")):
                     raise ValueError(f"Invalid URL format: {button_url}")
                 
                 buttons.append([InlineKeyboardButton(button_text, url=button_url)])
 
         user_data[user_id]["buttons"] = buttons
+        user_data[user_id]["state"] = State.WAITING_FOR_CHANNEL
         
-        # Show preview and ask for channel selection
-        preview_msg = await message.reply_photo(
+        # Show preview and channel selection button
+        preview = await message.reply_photo(
             photo=user_data[user_id]["anime_cover_url"],
             caption=(
                 f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
@@ -146,81 +148,73 @@ async def process_buttons(client, message: Message):
             reply_markup=InlineKeyboardMarkup(buttons)
         )
         
-        # Add channel selection button
+        # Get channels where bot is admin and create selection buttons
+        channels = []
+        async for dialog in client.get_dialogs():
+            if dialog.chat.type == "channel":
+                try:
+                    member = await client.get_chat_member(dialog.chat.id, "me")
+                    if member.can_post_messages:
+                        channels.append({
+                            "title": dialog.chat.title,
+                            "id": dialog.chat.id
+                        })
+                except Exception:
+                    continue
+
+        if not channels:
+            await message.reply("No channels found where bot can post!")
+            return
+
+        # Create channel selection keyboard
+        keyboard = []
+        for channel in channels:
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"{channel['title']}",
+                    callback_data=f"anime_post_{channel['id']}"
+                )
+            ])
+
         await message.reply(
-            "Preview shown above. Now you can:\n\n"
-            "1. Send new button format to update the buttons\n"
-            "2. Click 'Select Channel' to post\n\n"
-            "Button Format Examples:\n"
-            "• Single row: Button - URL\n"
-            "• Side by side: Button1 - URL1 | Button2 - URL2",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("📢 Select Channel", callback_data="select_channel")
-            ]])
+            "Select a channel to post:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
     except ValueError as e:
-        await message.reply(
-            f"❌ Error: {str(e)}\n\n"
-            "Please use one of these formats:\n"
-            "1. One button per line:\n"
-            "Button1 - https://example1.com\n"
-            "Button2 - https://example2.com\n\n"
-            "2. Side by side buttons:\n"
-            "Button1 - https://example1.com | Button2 - https://example2.com"
-        )
+        await message.reply(f"❌ Error: {str(e)}\nPlease follow the correct button format.")
 
-@Bot.on_callback_query(filters.regex("select_channel") & filters.user(OWNER_ID))
-async def channel_selector(client, callback_query):
+@Bot.on_callback_query(filters.regex("^anime_post_") & filters.user(OWNER_ID))
+async def post_to_channel(client, callback_query):
     try:
         user_id = callback_query.from_user.id
-        if user_id not in user_data:
-            await callback_query.answer("Session expired. Please start over.", show_alert=True)
+        if user_id not in user_data or user_data[user_id].get("state") != State.WAITING_FOR_CHANNEL:
+            await callback_query.answer("No active session found.", show_alert=True)
             return
 
-        # Forward message to channel
-        await callback_query.message.edit_text(
-            "Please forward a message from your target channel or share your post to channel."
+        channel_id = int(callback_query.data.replace("anime_post_", ""))
+        
+        # Show channel ID in message box
+        await callback_query.message.edit_text(f"{channel_id}")
+
+        # Post to channel
+        await client.send_photo(
+            chat_id=channel_id,
+            photo=user_data[user_id]["anime_cover_url"],
+            caption=(
+                f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
+                f"━━━━━━━━━━━━━━━\n"
+                f"📺 Quality: 720p | 1080p\n"
+                f"🍂 Season: {user_data[user_id]['season']}\n"
+                f"📆 Episodes: 1 to {user_data[user_id]['episodes']}\n"
+                f"━━━━━━━━━━━━━━━"
+            ),
+            reply_markup=InlineKeyboardMarkup(user_data[user_id]["buttons"])
         )
+
+        # Clean up
+        user_data.pop(user_id)
+        await callback_query.message.reply("✅ Posted successfully!")
 
     except Exception as e:
         await callback_query.answer(f"Error: {str(e)}", show_alert=True)
-
-@Bot.on_message(filters.forwarded & filters.private & filters.user(OWNER_ID))
-async def handle_forwarded(client, message: Message):
-    user_id = message.from_user.id
-    
-    if user_id not in user_data:
-        return
-
-    try:
-        # Get the channel information
-        if message.forward_from_chat and message.forward_from_chat.type == "channel":
-            channel_id = message.forward_from_chat.id
-            
-            try:
-                # Post to channel
-                await client.send_photo(
-                    chat_id=channel_id,
-                    photo=user_data[user_id]["anime_cover_url"],
-                    caption=(
-                        f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
-                        f"━━━━━━━━━━━━━━━\n"
-                        f"📺 Quality: 720p | 1080p\n"
-                        f"🍂 Season: {user_data[user_id]['season']}\n"
-                        f"📆 Episodes: 1 to {user_data[user_id]['episodes']}\n"
-                        f"━━━━━━━━━━━━━━━"
-                    ),
-                    reply_markup=InlineKeyboardMarkup(user_data[user_id]["buttons"])
-                )
-                
-                # Clean up
-                user_data.pop(user_id)
-                await message.reply("✅ Posted successfully!")
-            except Exception as e:
-                await message.reply(f"❌ Failed to post to channel. Error: {str(e)}")
-        else:
-            await message.reply("❌ Please forward a message from a channel, not from a user or group.")
-            
-    except Exception as e:
-        await message.reply(f"❌ Error: {str(e)}")
