@@ -188,8 +188,7 @@ async def post_handler(client, message: Message):
         f"‣ Last aired : {end_date}\n"
         f"‣ Runtime : {anime_data['duration']} minutes\n"
         f"‣ No of episodes : {anime_data['episodes']}\n\n"
-        f"‣ Synopsis : {anime_data['description']}\n\n"
-        f"(Source: AniList)"
+        f"‣ Synopsis : {anime_data['description']}"
     )
 
     anime_post = (
@@ -206,11 +205,11 @@ async def post_handler(client, message: Message):
     # Show previews with cover image
     await message.reply_photo(
         photo=cover_url,
-        caption="Preview of first post (Info):\n\n" + info_post
+        caption=info_post
     )
     await message.reply_photo(
         photo=cover_url,
-        caption="Preview of second post (Anime):\n\n" + anime_post
+        caption=anime_post
     )
 
     # Ask for channel ID
@@ -259,8 +258,7 @@ async def handle_channel_id(client, message: Message):
                 f"‣ Last aired : {end_date}\n"
                 f"‣ Runtime : {anime_data['duration']} minutes\n"
                 f"‣ No of episodes : {anime_data['episodes']}\n\n"
-                f"‣ Synopsis : {anime_data['description']}\n\n"
-                f"(Source: AniList)"
+                f"‣ Synopsis : {anime_data['description']})"
             )
         )
 
