@@ -173,55 +173,54 @@ async def process_buttons(client, message: Message):
 @Bot.on_callback_query(filters.regex("select_channel") & filters.user(OWNER_ID))
 async def channel_selector(client, callback_query):
     try:
-        # Create an inline keyboard with just one button to select channel
-        keyboard = [[
-            InlineKeyboardButton(
-                "📢 Select Channel", 
-                switch_inline_query_current_chat=""
-            )
-        ]]
+        user_id = callback_query.from_user.id
+        if user_id not in user_data:
+            await callback_query.answer("Session expired. Please start over.", show_alert=True)
+            return
 
+        # Forward message to channel
         await callback_query.message.edit_text(
-            "Click the button below to select a channel:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            "Please forward a message from your target channel or share your post to channel."
         )
 
     except Exception as e:
         await callback_query.answer(f"Error: {str(e)}", show_alert=True)
 
-@Bot.on_chosen_inline_result()
-async def handle_chosen_chat(client, chosen_inline_result):
+@Bot.on_message(filters.forwarded & filters.private & filters.user(OWNER_ID))
+async def handle_forwarded(client, message: Message):
+    user_id = message.from_user.id
+    
+    if user_id not in user_data:
+        return
+
     try:
-        user_id = chosen_inline_result.from_user.id
-        if user_id not in user_data:
-            return
-
-        chat_id = int(chosen_inline_result.result_id)
-        
-        # Post to selected channel
-        await client.send_photo(
-            chat_id=chat_id,
-            photo=user_data[user_id]["anime_cover_url"],
-            caption=(
-                f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
-                f"━━━━━━━━━━━━━━━\n"
-                f"📺 Quality: 720p | 1080p\n"
-                f"🍂 Season: {user_data[user_id]['season']}\n"
-                f"📆 Episodes: 1 to {user_data[user_id]['episodes']}\n"
-                f"━━━━━━━━━━━━━━━"
-            ),
-            reply_markup=InlineKeyboardMarkup(user_data[user_id]["buttons"])
-        )
-
-        # Clean up
-        user_data.pop(user_id)
-        await client.send_message(
-            chat_id=chosen_inline_result.from_user.id,
-            text="✅ Posted successfully!"
-        )
-
+        # Get the channel information
+        if message.forward_from_chat and message.forward_from_chat.type == "channel":
+            channel_id = message.forward_from_chat.id
+            
+            try:
+                # Post to channel
+                await client.send_photo(
+                    chat_id=channel_id,
+                    photo=user_data[user_id]["anime_cover_url"],
+                    caption=(
+                        f"✨ Anime Name: {user_data[user_id]['anime_title']} | {user_data[user_id]['anime_title']} ✨\n"
+                        f"━━━━━━━━━━━━━━━\n"
+                        f"📺 Quality: 720p | 1080p\n"
+                        f"🍂 Season: {user_data[user_id]['season']}\n"
+                        f"📆 Episodes: 1 to {user_data[user_id]['episodes']}\n"
+                        f"━━━━━━━━━━━━━━━"
+                    ),
+                    reply_markup=InlineKeyboardMarkup(user_data[user_id]["buttons"])
+                )
+                
+                # Clean up
+                user_data.pop(user_id)
+                await message.reply("✅ Posted successfully!")
+            except Exception as e:
+                await message.reply(f"❌ Failed to post to channel. Error: {str(e)}")
+        else:
+            await message.reply("❌ Please forward a message from a channel, not from a user or group.")
+            
     except Exception as e:
-        await client.send_message(
-            chat_id=chosen_inline_result.from_user.id,
-            text=f"❌ Error posting: {str(e)}"
-        )
+        await message.reply(f"❌ Error: {str(e)}")
