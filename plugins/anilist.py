@@ -86,7 +86,7 @@ async def anime_new_handler(client, message: Message):
         "2. Side by side buttons (horizontal):\n"
         "`Button1 - https://example1.com | Button2 - https://example2.com`\n\n"
         "You can mix both formats as needed.",
-        parse_mode="Markdown"
+        parse_mode="md"
     )
 
 @Bot.on_message(filters.text & filters.private & filters.user(OWNER_ID))
@@ -160,7 +160,7 @@ async def process_buttons(client, message: Message):
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("📢 Select Channel", callback_data="select_channel")
             ]]),
-            parse_mode="Markdown"
+            parse_mode="md"
         )
 
     except ValueError as e:
@@ -172,7 +172,7 @@ async def process_buttons(client, message: Message):
             "`Button2 - https://example2.com`\n\n"
             "2. Side by side buttons:\n"
             "`Button1 - https://example1.com | Button2 - https://example2.com`",
-            parse_mode="Markdown"
+            parse_mode="md"
         )
 
 @Bot.on_callback_query(filters.regex("select_channel") & filters.user(OWNER_ID))
